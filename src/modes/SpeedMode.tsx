@@ -29,7 +29,7 @@ export default function SpeedMode({ deck, itemIds, onFinish }: ModeProps) {
         title="Speed drill"
         description={
           itemIds
-            ? `Rapid-fire on your ${itemIds.length} missed item(s).`
+            ? `Rapid-fire on ${itemIds.length} selected item(s).`
             : 'Answer as many as you can before the clock runs out. Wrong answers flash the right one and move on.'
         }
         onStart={() => setConfig({ seconds, answer, style })}

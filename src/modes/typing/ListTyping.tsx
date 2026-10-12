@@ -20,7 +20,7 @@ export default function ListTyping({ deck, itemIds, onFinish }: ModeProps) {
         title="Typing: recite the list"
         description={
           itemIds
-            ? `Retrying ${itemIds.length} missed entr${itemIds.length === 1 ? 'y' : 'ies'}, one at a time.`
+            ? `${itemIds.length} selected entr${itemIds.length === 1 ? 'y' : 'ies'}, one at a time.`
             : choice === 'full'
               ? 'Type every entry in order, one per line.'
               : 'You are shown each entry and type the one that comes after it.'

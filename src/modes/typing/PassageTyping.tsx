@@ -20,7 +20,7 @@ export default function PassageTyping({ deck, itemIds, onFinish }: ModeProps) {
         title="Typing: recite the passage"
         description={
           itemIds
-            ? `Retrying ${targetIndexes(deck, itemIds).length} missed line(s), one at a time.`
+            ? `${targetIndexes(deck, itemIds).length} selected line(s), one at a time.`
             : 'Type it from memory. You will get a word-by-word comparison when you check.'
         }
         onStart={() => setStarted(true)}

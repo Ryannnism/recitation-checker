@@ -21,7 +21,7 @@ export default function GroupTyping({ deck, itemIds, onFinish }: ModeProps) {
         title="Typing: name everyone in each class"
         description={
           itemIds
-            ? `Retrying ${count} class${count === 1 ? '' : 'es'} where you missed someone.`
+            ? `${count} selected class${count === 1 ? '' : 'es'}. Type every name you remember in any order, one per line or separated by commas.`
             : 'For each class, type every name you remember in any order, one per line or separated by commas.'
         }
         onStart={() => {

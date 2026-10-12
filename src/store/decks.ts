@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { parseDeck, reuseIds } from '../lib/parse'
 import type { Attempt, Deck, Mode } from '../types'
 
 const DECKS_KEY = 'rc.decks.v1'
@@ -18,8 +19,14 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
+/** Class lists are re-parsed from their source on load so parser improvements apply to saved decks. */
+function reparse(deck: Deck): Deck {
+  if (deck.kind !== 'groups') return deck
+  return { ...deck, items: reuseIds(deck.items, parseDeck(deck.kind, deck.source, deck.splitBy).items) }
+}
+
 function load(): State {
-  return { decks: read<Deck[]>(DECKS_KEY, []), attempts: read<Attempt[]>(ATTEMPTS_KEY, []) }
+  return { decks: read<Deck[]>(DECKS_KEY, []).map(reparse), attempts: read<Attempt[]>(ATTEMPTS_KEY, []) }
 }
 
 let state: State = load()

@@ -13,7 +13,7 @@ export default function QaTyping({ deck, itemIds, onFinish }: ModeProps) {
     return (
       <SetupCard
         title="Typing: answer each prompt"
-        description={itemIds ? `Retrying ${itemIds.length} missed item(s).` : `${deck.items.length} prompts, shuffled.`}
+        description={itemIds ? `${itemIds.length} selected prompt(s), shuffled.` : `${deck.items.length} prompts, shuffled.`}
         onStart={() => setQuestions(buildQuestionSet(deck, itemIds, style, false))}
       >
         <Segmented value={style} onChange={setStyle} options={QUESTION_STYLES.qa} />

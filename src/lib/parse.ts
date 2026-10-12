@@ -58,8 +58,24 @@ function parseList(text: string): ParseResult {
 const COUNT = /\b(\d+)\s*(?:men|members|brothers|guys|people|names)\b/i
 const BULLET = /^\s*(?:[-*•·]|\d+[.)])\s+/
 
+const GREEK = 'alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|omicron|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega'
+const GREEK_ONLY = new RegExp(`^(?:(?:${GREEK})\\b\\s*)+(?:class)?$`, 'i')
+const GREEK_LEAD = new RegExp(`^(?:(?:${GREEK})\\b\\s*)+(?:class\\s*)?[-–—:|,(]`, 'i')
+const YEAR = /\b(?:19|20)\d{2}\b/
+
 function isExplicitHeader(line: string): boolean {
-  return line.startsWith('#') || /:\s*$/.test(line) || COUNT.test(line)
+  return (
+    line.startsWith('#') ||
+    /:\s*$/.test(line) ||
+    COUNT.test(line) ||
+    YEAR.test(line) ||
+    GREEK_ONLY.test(line) ||
+    GREEK_LEAD.test(line)
+  )
+}
+
+export function crossingYear(header: string): string | undefined {
+  return YEAR.exec(header)?.[0]
 }
 
 function cleanHeader(line: string): string {
@@ -72,7 +88,8 @@ export function groupName(header: string): string {
 }
 
 /**
- * Headers are lines starting with "#", ending with ":", or containing a count like "12 men".
+ * Headers are lines starting with "#", ending with ":", containing a count like "12 men" or a year,
+ * or starting with Greek letters followed by a separator ("Eta - ...").
  * Without any such line, each blank-line-separated block's first line is its header.
  */
 function parseGroups(text: string): ParseResult {

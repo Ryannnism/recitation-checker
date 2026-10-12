@@ -15,7 +15,7 @@ export default function McqMode({ deck, itemIds, onFinish }: ModeProps) {
         title="Multiple choice"
         description={
           itemIds
-            ? `Retrying ${itemIds.length} missed item(s).`
+            ? `Questions from ${itemIds.length} selected item(s). Use the number keys for speed.`
             : 'Pick the right option. Use the number keys for speed.'
         }
         onStart={() => setQuestions(buildQuestionSet(deck, itemIds, style, true))}

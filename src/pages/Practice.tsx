@@ -1,6 +1,8 @@
-import { useCallback, useState, type ComponentType } from 'react'
+import { useCallback, useMemo, useState, type ComponentType } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
+import ItemPicker from '../components/ItemPicker'
 import Results from '../components/Results'
+import { setSelection, useSelection } from '../store/selection'
 import { deckSize } from '../lib/format'
 import McqMode from '../modes/McqMode'
 import SpeedMode from '../modes/SpeedMode'
@@ -41,6 +43,13 @@ function Practice({ deck, mode }: { deck: Deck; mode: Mode }) {
   const attempts = useAttempts()
   const [session, setSession] = useState<{ key: number; itemIds: string[] | null }>({ key: 0, itemIds: null })
   const [done, setDone] = useState<{ result: SessionResult; prevBest?: Attempt } | null>(null)
+  const savedSelection = useSelection(deck.id)
+  const selection = useMemo(() => {
+    if (!savedSelection) return null
+    const ids = new Set(deck.items.map((i) => i.id))
+    const valid = savedSelection.filter((id) => ids.has(id))
+    return valid.length && valid.length < deck.items.length ? valid : null
+  }, [savedSelection, deck.items])
 
   const onFinish = useCallback(
     (result: SessionResult) => {
@@ -86,14 +95,24 @@ function Practice({ deck, mode }: { deck: Deck; mode: Mode }) {
         </div>
       </div>
 
-      {session.itemIds && !done && (
-        <p className="muted small">
-          Practicing {session.itemIds.length} missed item(s).{' '}
-          <button className="ghost small" onClick={() => restart(null)}>
-            Practice the full deck instead
-          </button>
-        </p>
-      )}
+      {!done &&
+        (session.itemIds ? (
+          <p className="muted small">
+            Practicing {session.itemIds.length} missed item(s).{' '}
+            <button className="ghost small" onClick={() => restart(null)}>
+              Back to your selection
+            </button>
+          </p>
+        ) : (
+          <ItemPicker
+            deck={deck}
+            selected={selection}
+            onChange={(ids) => {
+              setSelection(deck.id, ids)
+              restart(null)
+            }}
+          />
+        ))}
 
       {done ? (
         <Results
@@ -104,7 +123,7 @@ function Practice({ deck, mode }: { deck: Deck; mode: Mode }) {
           onRetryMissed={() => restart([...new Set(done.result.missed.map((m) => m.itemId))])}
         />
       ) : (
-        <ModeComponent key={session.key} deck={deck} itemIds={session.itemIds} onFinish={onFinish} />
+        <ModeComponent key={session.key} deck={deck} itemIds={session.itemIds ?? selection} onFinish={onFinish} />
       )}
     </div>
   )
