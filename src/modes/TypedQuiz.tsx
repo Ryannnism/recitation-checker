@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import DiffView from '../components/DiffView'
+import SetView from '../components/SetView'
 import { ProgressBar } from '../components/SetupCard'
 import { gradeTyped, type Question, type TypedGrade } from '../lib/questions'
 import { useGradeOptions } from '../store/settings'
@@ -93,7 +94,9 @@ export default function TypedQuiz({ questions, unit, onFinish }: Props) {
         onChange={(e) => !grade && setInput(e.target.value)}
         onKeyDown={onKeyDown}
         readOnly={!!grade}
-        placeholder="Type your answer and press Enter"
+        placeholder={
+          q.members ? `Type all ${q.members.length}, separated by commas, then press Enter` : 'Type your answer and press Enter'
+        }
         autoFocus
         autoComplete="off"
         spellCheck={false}
@@ -117,7 +120,13 @@ export default function TypedQuiz({ questions, unit, onFinish }: Props) {
                 <strong>Accepted</strong> &middot; expected <span className="expected">{q.answer}</span>
               </>
             )}
-            {grade.kind === 'wrong' && (
+            {grade.kind === 'wrong' && grade.set && (
+              <strong>
+                {grade.set.found.length} / {q.members?.length} named
+                {grade.set.extra.length > 0 && ` · ${grade.set.extra.length} wrong`}
+              </strong>
+            )}
+            {grade.kind === 'wrong' && !grade.set && (
               <>
                 <strong>{input.trim() ? 'Not quite' : 'Answer'}</strong> &middot; expected{' '}
                 <span className="expected">{q.answer}</span>
@@ -126,6 +135,7 @@ export default function TypedQuiz({ questions, unit, onFinish }: Props) {
             )}
           </div>
           {grade.diff && !grade.correct && <DiffView tokens={grade.diff.tokens} />}
+          {grade.set && (grade.kind !== 'exact' || grade.set.found.length > 1) && <SetView grade={grade.set} />}
           <div className="row" style={{ marginTop: '0.75rem' }}>
             <button className="primary" onClick={next}>
               {pos + 1 >= questions.length ? 'See results' : 'Next'} <kbd>Enter</kbd>

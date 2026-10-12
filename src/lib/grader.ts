@@ -1,4 +1,5 @@
 import type { GradeOptions } from '../types'
+import { variants } from './parse'
 
 const DASHES = /[\p{Pd}/\\]/gu
 const PUNCT = /[\p{P}\p{S}]/gu
@@ -52,6 +53,14 @@ export function matchAny(input: string, accepted: string[], opts: GradeOptions):
   return 'wrong'
 }
 
+/** Splits a typed list on commas and new lines. */
+export function splitList(text: string): string[] {
+  return text
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 export interface SetGrade {
   found: { expected: string; given: string; kind: 'exact' | 'close' }[]
   missing: string[]
@@ -68,7 +77,7 @@ export function gradeSet(expected: string[], given: string[], opts: GradeOptions
       if (matchOf[gi] >= 0) return
       const ei = expected.findIndex((e, i) => {
         if (used[i]) return false
-        const k = matchAnswer(g, e, opts)
+        const k = matchAny(g, variants(e), opts)
         return pass === 'exact' ? k === 'exact' : k !== 'wrong'
       })
       if (ei >= 0) {

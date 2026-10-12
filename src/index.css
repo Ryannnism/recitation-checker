@@ -349,6 +349,10 @@ button.small {
   font-size: 0.85rem;
 }
 
+.facet-label {
+  width: 4.5rem;
+}
+
 button.chip.active {
   background: var(--accent-2);
   border-color: var(--accent-2);

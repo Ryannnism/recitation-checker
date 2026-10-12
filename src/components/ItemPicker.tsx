@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { facetOptions } from '../lib/facets'
 import { crossingYear } from '../lib/parse'
 import type { Deck, Item } from '../types'
 
@@ -30,6 +31,34 @@ export default function ItemPicker({ deck, selected, onChange }: Props) {
     return byYear.size > 1 ? [...byYear.entries()].map(([year, ids]) => ({ year, ids })) : []
   }, [deck])
 
+  const facets = useMemo(
+    () => (deck.kind === 'qa' ? facetOptions(deck.items) : { categories: [], groups: [] }),
+    [deck],
+  )
+  const [catSel, setCatSel] = useState<Set<string>>(new Set())
+  const [groupSel, setGroupSel] = useState<Set<string>>(new Set())
+
+  const applyFacets = (cats: Set<string>, groups: Set<string>) => {
+    setCatSel(cats)
+    setGroupSel(groups)
+    const inCats = new Set(facets.categories.filter((c) => cats.has(c.label)).flatMap((c) => c.ids))
+    const inGroups = new Set(facets.groups.filter((g) => groups.has(g.label)).flatMap((g) => g.ids))
+    setDraft(
+      new Set(
+        deck.items
+          .filter((i) => (!cats.size || inCats.has(i.id)) && (!groups.size || inGroups.has(i.id)))
+          .map((i) => i.id),
+      ),
+    )
+  }
+
+  const flip = (set: Set<string>, label: string) => {
+    const next = new Set(set)
+    if (next.has(label)) next.delete(label)
+    else next.add(label)
+    return next
+  }
+
   if (!draft) {
     return (
       <div className="picker-bar">
@@ -37,7 +66,14 @@ export default function ItemPicker({ deck, selected, onChange }: Props) {
           Practicing{' '}
           <strong>{count === total ? `all ${total} ${noun}` : `${count} of ${total} ${noun}`}</strong>
         </span>
-        <button className="small" onClick={() => setDraft(new Set(selected ?? deck.items.map((i) => i.id)))}>
+        <button
+          className="small"
+          onClick={() => {
+            setCatSel(new Set())
+            setGroupSel(new Set())
+            setDraft(new Set(selected ?? deck.items.map((i) => i.id)))
+          }}
+        >
           Choose {noun}
         </button>
         {selected && (
@@ -66,10 +102,17 @@ export default function ItemPicker({ deck, selected, onChange }: Props) {
       <div className="spread">
         <strong>Choose {noun} to practice</strong>
         <div className="row">
-          <button className="ghost small" onClick={() => toggle(deck.items.map((i) => i.id), true)}>
+          <button className="ghost small" onClick={() => applyFacets(new Set(), new Set())}>
             All
           </button>
-          <button className="ghost small" onClick={() => setDraft(new Set())}>
+          <button
+            className="ghost small"
+            onClick={() => {
+              setCatSel(new Set())
+              setGroupSel(new Set())
+              setDraft(new Set())
+            }}
+          >
             None
           </button>
         </div>
@@ -85,6 +128,34 @@ export default function ItemPicker({ deck, selected, onChange }: Props) {
               </button>
             )
           })}
+        </div>
+      )}
+      {facets.categories.length > 0 && (
+        <div className="row" style={{ marginTop: '0.75rem' }}>
+          <span className="muted small facet-label">Question:</span>
+          {facets.categories.map((c) => (
+            <button
+              key={c.label}
+              className={`small chip ${catSel.has(c.label) ? 'active' : ''}`}
+              onClick={() => applyFacets(flip(catSel, c.label), groupSel)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {facets.groups.length > 0 && (
+        <div className="row" style={{ marginTop: '0.5rem' }}>
+          <span className="muted small facet-label">Class:</span>
+          {facets.groups.map((g) => (
+            <button
+              key={g.label}
+              className={`small chip ${groupSel.has(g.label) ? 'active' : ''}`}
+              onClick={() => applyFacets(catSel, flip(groupSel, g.label))}
+            >
+              {g.label}
+            </button>
+          ))}
         </div>
       )}
       <div className="picker-grid">

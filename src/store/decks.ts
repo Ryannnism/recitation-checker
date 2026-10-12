@@ -19,9 +19,9 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 
-/** Class lists are re-parsed from their source on load so parser improvements apply to saved decks. */
+/** Q/A decks and class lists are re-parsed from their source on load so parser improvements apply to saved decks. */
 function reparse(deck: Deck): Deck {
-  if (deck.kind !== 'groups') return deck
+  if (deck.kind !== 'groups' && deck.kind !== 'qa') return deck
   return { ...deck, items: reuseIds(deck.items, parseDeck(deck.kind, deck.source, deck.splitBy).items) }
 }
 

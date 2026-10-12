@@ -2,7 +2,8 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import GradeSettings from '../../components/GradeSettings'
 import SetupCard, { ProgressBar, Segmented } from '../../components/SetupCard'
 import { pct } from '../../lib/format'
-import { gradeSet, type SetGrade } from '../../lib/grader'
+import { gradeSet, splitList, type SetGrade } from '../../lib/grader'
+import SetView from '../../components/SetView'
 import { targetIndexes } from '../../lib/questions'
 import { shuffle } from '../../lib/shuffle'
 import { useGradeOptions } from '../../store/settings'
@@ -50,13 +51,6 @@ interface GroupResult {
   grade: SetGrade
 }
 
-function splitNames(text: string): string[] {
-  return text
-    .split(/[\n,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
-
 function GroupRun({ deck, targets, onFinish }: { deck: Deck; targets: number[]; onFinish: ModeProps['onFinish'] }) {
   const opts = useGradeOptions()
   const [pos, setPos] = useState(0)
@@ -69,7 +63,7 @@ function GroupRun({ deck, targets, onFinish }: { deck: Deck; targets: number[]; 
   const index = targets[pos]
   const group = deck.items[index]
   const members = group.members ?? []
-  const entered = splitNames(text).length
+  const entered = splitList(text).length
 
   const finish = (all: GroupResult[]) => {
     onFinish({
@@ -90,7 +84,7 @@ function GroupRun({ deck, targets, onFinish }: { deck: Deck; targets: number[]; 
   }
 
   const check = () => {
-    const g = gradeSet(members, splitNames(text), opts)
+    const g = gradeSet(members, splitList(text), opts)
     setGrade(g)
     setResults((r) => [...r, { index, grade: g }])
     inputRef.current?.focus()
@@ -162,31 +156,7 @@ function GroupRun({ deck, targets, onFinish }: { deck: Deck; targets: number[]; 
             </strong>
             {grade.extra.length > 0 && <span className="muted"> &middot; {grade.extra.length} not in this class</span>}
           </div>
-          <div className="group-grade">
-            {grade.found.map((f) => (
-              <span key={f.expected} className={f.kind === 'exact' ? 'd-correct' : 'd-typo'} title={f.kind === 'close' ? `You typed: ${f.given}` : undefined}>
-                {f.expected}
-              </span>
-            ))}
-            {grade.missing.map((m) => (
-              <span key={m} className="d-missing" title="Missing">
-                {m}
-              </span>
-            ))}
-            {grade.extra.map((x, i) => (
-              <span key={`${x}-${i}`} className="d-extra" title="Not in this class">
-                <s>{x}</s>
-              </span>
-            ))}
-          </div>
-          <div className="legend muted">
-            <span className="d-correct">named</span>
-            <span className="d-typo">accepted typo</span>
-            <span className="d-missing">missing</span>
-            <span className="d-extra">
-              <s>not in class</s>
-            </span>
-          </div>
+          <SetView grade={grade} extraLabel="not in class" />
           <div className="row" style={{ marginTop: '0.75rem' }}>
             <button className="primary" onClick={next}>
               {pos + 1 >= targets.length ? 'See results' : 'Next class'} <kbd>Enter</kbd>

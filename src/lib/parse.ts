@@ -35,15 +35,28 @@ function parseQa(text: string): ParseResult {
       errors.push(`Line ${n}: no "|" or tab between prompt and answer.`)
       continue
     }
-    const [prompt, answer, ...alternates] = fields
-    if (!prompt || !answer) {
+    const [prompt, ...answers] = fields
+    const parts = answers.filter(Boolean)
+    if (!prompt || !parts.length) {
       errors.push(`Line ${n}: prompt or answer is empty.`)
       continue
     }
-    const alts = alternates.filter(Boolean)
-    items.push({ id: newId(), prompt, answer, ...(alts.length ? { alternates: alts } : {}) })
+    if (parts.length > 1) {
+      items.push({ id: newId(), prompt, answer: parts.join(', '), members: parts })
+      continue
+    }
+    const [answer, ...alternates] = variants(parts[0])
+    items.push({ id: newId(), prompt, answer, ...(alternates.length ? { alternates } : {}) })
   }
   return { items, errors }
+}
+
+/** "Brasília / Brasilia" -> both spellings are accepted. */
+export function variants(field: string): string[] {
+  return field
+    .split(/\s+\/\s+/)
+    .map((v) => v.trim())
+    .filter(Boolean)
 }
 
 const NUMBERING = /^\s*\d+[.)]\s+/

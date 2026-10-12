@@ -13,8 +13,8 @@ const HELP: Record<DeckKind, { hint: string; placeholder: string }> = {
     placeholder: 'Shall I compare thee to a summer’s day?\nThou art more lovely and more temperate:\nRough winds do shake the darling buds of May,\nAnd summer’s lease hath all too short a date;',
   },
   qa: {
-    hint: 'One pair per line: prompt | answer. Use a tab instead of "|" if you paste from a spreadsheet. Add more "|" fields for extra accepted answers.',
-    placeholder: 'Capital of France | Paris\nH2O | Water\nLargest planet | Jupiter\nAuthor of Hamlet | Shakespeare | William Shakespeare',
+    hint: 'One pair per line: prompt | answer. Add more "|" fields when the answer is a list: every one must be named, in any order. Separate alternate spellings of one answer with " / ".',
+    placeholder: 'Capital of France | Paris\nEta Pi Class crossed? | Spring 2023\nEta Pi Men? | Jeff Liu | Jimmy Yu | Aaron Liang\nAuthor of Hamlet | Shakespeare / William Shakespeare',
   },
   list: {
     hint: 'One entry per line, in order. Numbering like "1." or "2)" is stripped automatically.',

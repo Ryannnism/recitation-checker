@@ -15,7 +15,7 @@ const SAMPLES: { name: string; kind: DeckKind; splitBy?: SplitBy; source: string
 Japan | Tokyo
 Australia | Canberra
 Canada | Ottawa
-Brazil | Brasília | Brasilia
+Brazil | Brasília / Brasilia
 Egypt | Cairo
 Kenya | Nairobi
 Turkey | Ankara

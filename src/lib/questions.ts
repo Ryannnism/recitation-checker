@@ -1,7 +1,17 @@
-import type { Deck, DeckKind, GradeOptions } from '../types'
+import type { Deck, DeckKind, GradeOptions, Item } from '../types'
 import { pickDistractors } from './distractors'
+import { sameCategory } from './facets'
 import { groupName } from './parse'
-import { isPerfect, matchAny, wordDiff, type DiffResult, type MatchKind } from './grader'
+import {
+  gradeSet,
+  isPerfect,
+  matchAny,
+  splitList,
+  wordDiff,
+  type DiffResult,
+  type MatchKind,
+  type SetGrade,
+} from './grader'
 import { sample, shuffle } from './shuffle'
 
 export interface Question {
@@ -12,8 +22,10 @@ export interface Question {
   answer: string
   alternates?: string[]
   options?: string[]
-  /** "line" answers are graded word by word; "answer" answers are fuzzy-matched as a whole. */
-  matchBy: 'answer' | 'line'
+  /** Every one of these must be named, in any order (used when matchBy is "set"). */
+  members?: string[]
+  /** "line" answers are graded word by word, "set" answers need every member, "answer" answers are fuzzy-matched as a whole. */
+  matchBy: 'answer' | 'line' | 'set'
 }
 
 export interface StyleOption {
@@ -46,6 +58,51 @@ const qid = () => `q${++counter}`
 function withOptions(q: Question, pool: string[], mcq: boolean): Question {
   if (!mcq) return q
   return { ...q, options: shuffle([q.answer, ...pickDistractors(q.answer, pool)]) }
+}
+
+/** Wrong options come from prompts of the same type ("President?" answers for a "President?" question) when the deck has such types. */
+function qaPool(items: Item[], item: Item, pick: (i: Item) => string[]): string[] {
+  const peers = sameCategory(items, item)
+  return (peers.length ? peers : items.filter((i) => i !== item)).flatMap(pick)
+}
+
+function qaQuestion(deck: Deck, item: Item, style: string, mcq: boolean): Question {
+  const items = deck.items
+  const prompt = item.prompt ?? ''
+
+  if (style === 'reverse') {
+    return withOptions(
+      { id: qid(), itemId: item.id, label: 'Which prompt goes with this answer?', prompt: item.answer, answer: prompt, matchBy: 'answer' },
+      qaPool(items, item, (i) => [i.prompt ?? '']),
+      mcq,
+    )
+  }
+
+  if (item.members) {
+    if (!mcq) {
+      return {
+        id: qid(),
+        itemId: item.id,
+        label: `Name all ${item.members.length}, any order`,
+        prompt,
+        answer: item.answer,
+        members: item.members,
+        matchBy: 'set',
+      }
+    }
+    const mine = new Set(item.members.map((m) => m.toLocaleLowerCase()))
+    return withOptions(
+      { id: qid(), itemId: item.id, label: 'Which of these is one of them?', prompt, answer: sample(item.members), matchBy: 'answer' },
+      qaPool(items, item, (i) => i.members ?? [i.answer]).filter((m) => !mine.has(m.toLocaleLowerCase())),
+      mcq,
+    )
+  }
+
+  return withOptions(
+    { id: qid(), itemId: item.id, label: 'Answer', prompt, answer: item.answer, alternates: item.alternates, matchBy: 'answer' },
+    qaPool(items, item, (i) => i.members ?? [i.answer]),
+    mcq,
+  )
 }
 
 function resolveStyle(kind: DeckKind, style: string): string {
@@ -116,18 +173,7 @@ export function buildQuestion(deck: Deck, index: number, style: string, mcq: boo
       return item.members?.length ? memberQuestion(deck, index, sample(item.members), mcq) : null
 
     case 'qa':
-      if (s === 'reverse') {
-        return withOptions(
-          { id: qid(), itemId: item.id, label: 'Which prompt goes with this answer?', prompt: item.answer, answer: item.prompt ?? '', matchBy: 'answer' },
-          items.map((i) => i.prompt ?? ''),
-          mcq,
-        )
-      }
-      return withOptions(
-        { id: qid(), itemId: item.id, label: 'Answer', prompt: item.prompt ?? '', answer: item.answer, alternates: item.alternates, matchBy: 'answer' },
-        items.map((i) => i.answer),
-        mcq,
-      )
+      return qaQuestion(deck, item, s, mcq)
 
     case 'passage': {
       if (s === 'blank') {
@@ -247,9 +293,16 @@ export interface TypedGrade {
   correct: boolean
   kind: MatchKind
   diff?: DiffResult
+  set?: SetGrade
 }
 
 export function gradeTyped(q: Question, input: string, opts: GradeOptions): TypedGrade {
+  if (q.matchBy === 'set' && q.members) {
+    const set = gradeSet(q.members, splitList(input), opts)
+    const correct = set.missing.length === 0 && set.extra.length === 0
+    const kind: MatchKind = !correct ? 'wrong' : set.found.some((f) => f.kind === 'close') ? 'close' : 'exact'
+    return { correct, kind, set }
+  }
   if (q.matchBy === 'line') {
     const diff = wordDiff(q.answer, input, opts)
     const perfect = isPerfect(diff) && diff.total > 0
