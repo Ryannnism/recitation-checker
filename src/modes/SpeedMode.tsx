@@ -53,10 +53,12 @@ export default function SpeedMode({ deck, itemIds, onFinish }: ModeProps) {
             ]}
           />
         </div>
-        <div className="row">
-          <span className="muted small" style={{ width: '6rem' }}>Questions</span>
-          <Segmented value={style} onChange={setStyle} options={styles} />
-        </div>
+        {styles.length > 1 && (
+          <div className="row">
+            <span className="muted small" style={{ width: '6rem' }}>Questions</span>
+            <Segmented value={style} onChange={setStyle} options={styles} />
+          </div>
+        )}
         {answer === 'typing' && <GradeSettings />}
         <div className="row small muted">
           Best:

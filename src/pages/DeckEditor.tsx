@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteDeck, saveDeck, useDeck } from '../store/decks'
 import { parseDeck, reuseIds } from '../lib/parse'
+import { deckSize } from '../lib/format'
 import { KIND_LABELS, type DeckKind, type SplitBy } from '../types'
 
-const KINDS: DeckKind[] = ['passage', 'qa', 'list']
+const KINDS: DeckKind[] = ['passage', 'qa', 'list', 'groups']
 
 const HELP: Record<DeckKind, { hint: string; placeholder: string }> = {
   passage: {
@@ -18,6 +19,10 @@ const HELP: Record<DeckKind, { hint: string; placeholder: string }> = {
   list: {
     hint: 'One entry per line, in order. Numbering like "1." or "2)" is stripped automatically.',
     placeholder: 'Mercury\nVenus\nEarth\nMars',
+  },
+  groups: {
+    hint: 'A header line for each class, like "Eta - 12 men" (or ending in ":"), with that class\'s names under it, one per line. Names inside a class are tested in any order. If the header has a count, it is checked against the names listed.',
+    placeholder: 'Alpha - 3 men\nJohn Smith\nMike Lee\nDavid Kim\n\nBeta - 2 men\nChris Park\nSam Jones',
   },
 }
 
@@ -129,7 +134,7 @@ export default function DeckEditor() {
         <div className="card">
           <div className="spread" style={{ marginBottom: '0.5rem' }}>
             <strong>Preview</strong>
-            <span className="muted small">{parsed.items.length} items</span>
+            <span className="muted small">{deckSize({ kind, items: parsed.items })}</span>
           </div>
           {parsed.errors.length > 0 && (
             <div className="errors" style={{ marginBottom: '0.5rem' }}>
@@ -146,7 +151,13 @@ export default function DeckEditor() {
               <ol>
                 {parsed.items.slice(0, 200).map((it) => (
                   <li key={it.id}>
-                    {it.prompt !== undefined ? (
+                    {it.members ? (
+                      <>
+                        <strong>{it.prompt}</strong>{' '}
+                        <span className="muted small">({it.members.length} names)</span>
+                        <div className="small">{it.members.join(' · ')}</div>
+                      </>
+                    ) : it.prompt !== undefined ? (
                       <>
                         <span className="q">{it.prompt}</span> &rarr; {it.answer}
                         {it.alternates && <span className="muted small"> (also: {it.alternates.join(', ')})</span>}

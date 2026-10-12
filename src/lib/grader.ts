@@ -52,6 +52,39 @@ export function matchAny(input: string, accepted: string[], opts: GradeOptions):
   return 'wrong'
 }
 
+export interface SetGrade {
+  found: { expected: string; given: string; kind: 'exact' | 'close' }[]
+  missing: string[]
+  extra: string[]
+}
+
+/** Grades an unordered recitation: each expected entry can be matched by at most one given entry. */
+export function gradeSet(expected: string[], given: string[], opts: GradeOptions): SetGrade {
+  const used = expected.map(() => false)
+  const matchOf = given.map(() => -1)
+  const kindOf: ('exact' | 'close')[] = []
+  for (const pass of ['exact', 'close'] as const) {
+    given.forEach((g, gi) => {
+      if (matchOf[gi] >= 0) return
+      const ei = expected.findIndex((e, i) => {
+        if (used[i]) return false
+        const k = matchAnswer(g, e, opts)
+        return pass === 'exact' ? k === 'exact' : k !== 'wrong'
+      })
+      if (ei >= 0) {
+        used[ei] = true
+        matchOf[gi] = ei
+        kindOf[gi] = pass
+      }
+    })
+  }
+  return {
+    found: given.flatMap((g, gi) => (matchOf[gi] >= 0 ? [{ expected: expected[matchOf[gi]], given: g, kind: kindOf[gi] }] : [])),
+    missing: expected.filter((_, i) => !used[i]),
+    extra: given.filter((_, gi) => matchOf[gi] < 0),
+  }
+}
+
 export type DiffType = 'correct' | 'typo' | 'wrong' | 'missing' | 'extra'
 
 export interface DiffToken {

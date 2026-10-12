@@ -1,6 +1,7 @@
 import { useCallback, useState, type ComponentType } from 'react'
 import { Link, NavLink, useParams } from 'react-router-dom'
 import Results from '../components/Results'
+import { deckSize } from '../lib/format'
 import McqMode from '../modes/McqMode'
 import SpeedMode from '../modes/SpeedMode'
 import TypingMode from '../modes/TypingMode'
@@ -72,7 +73,7 @@ function Practice({ deck, mode }: { deck: Deck; mode: Mode }) {
         <div>
           <div className="row">
             <span className={`badge ${deck.kind}`}>{KIND_LABELS[deck.kind]}</span>
-            <span className="muted small">{deck.items.length} items</span>
+            <span className="muted small">{deckSize(deck)}</span>
           </div>
           <h1 style={{ marginTop: '0.35rem' }}>{deck.name}</h1>
         </div>

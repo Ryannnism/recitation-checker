@@ -1,5 +1,6 @@
 import type { Deck, DeckKind, GradeOptions } from '../types'
 import { pickDistractors } from './distractors'
+import { groupName } from './parse'
 import { isPerfect, matchAny, wordDiff, type DiffResult, type MatchKind } from './grader'
 import { sample, shuffle } from './shuffle'
 
@@ -36,6 +37,7 @@ export const QUESTION_STYLES: Record<DeckKind, StyleOption[]> = {
     { id: 'after', label: 'What comes after' },
     { id: 'position', label: 'Which position' },
   ],
+  groups: [{ id: 'member', label: 'Who was in the class' }],
 }
 
 let counter = 0
@@ -55,6 +57,30 @@ const EDGE_PUNCT = /^([\p{P}\p{S}]*)(.*?)([\p{P}\p{S}]*)$/u
 
 function core(word: string): string {
   return EDGE_PUNCT.exec(word)?.[2] ?? word
+}
+
+function memberQuestion(deck: Deck, index: number, member: string, mcq: boolean): Question {
+  const item = deck.items[index]
+  const members = item.members ?? []
+  const name = groupName(item.prompt ?? '')
+  const inGroup = new Set(members.map((m) => m.toLocaleLowerCase()))
+  const pool = deck.items
+    .filter((i) => i !== item)
+    .flatMap((i) => i.members ?? [])
+    .filter((m) => !inGroup.has(m.toLocaleLowerCase()))
+  return withOptions(
+    {
+      id: qid(),
+      itemId: item.id,
+      label: mcq ? 'Who was in the class?' : 'Name anyone in the class',
+      prompt: mcq ? `Which of these was in ${name}?` : `Name someone in ${name}`,
+      answer: member,
+      alternates: members.filter((m) => m !== member),
+      matchBy: 'answer',
+    },
+    pool,
+    mcq,
+  )
 }
 
 function blankQuestion(deck: Deck, index: number, mcq: boolean): Question | null {
@@ -86,6 +112,9 @@ export function buildQuestion(deck: Deck, index: number, style: string, mcq: boo
   const othersThanPrev = items.filter((i) => i !== prev).map((i) => i.answer)
 
   switch (deck.kind) {
+    case 'groups':
+      return item.members?.length ? memberQuestion(deck, index, sample(item.members), mcq) : null
+
     case 'qa':
       if (s === 'reverse') {
         return withOptions(
@@ -173,9 +202,16 @@ export function buildQuestionSet(
   mcq: boolean,
   ordered = false,
 ): Question[] {
-  const qs = targetIndexes(deck, itemIds)
-    .map((i) => buildQuestion(deck, i, style, mcq))
-    .filter((q) => usable(q, mcq))
+  const targets = targetIndexes(deck, itemIds)
+  const qs = (
+    deck.kind === 'groups'
+      ? targets.flatMap((i) =>
+          shuffle(deck.items[i].members ?? [])
+            .slice(0, 3)
+            .map((m) => memberQuestion(deck, i, m, mcq)),
+        )
+      : targets.map((i) => buildQuestion(deck, i, style, mcq))
+  ).filter((q) => usable(q, mcq))
   return ordered ? qs : shuffle(qs)
 }
 

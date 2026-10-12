@@ -20,7 +20,7 @@ export default function McqMode({ deck, itemIds, onFinish }: ModeProps) {
         }
         onStart={() => setQuestions(buildQuestionSet(deck, itemIds, style, true))}
       >
-        <Segmented value={style} onChange={setStyle} options={styles} />
+        {styles.length > 1 && <Segmented value={style} onChange={setStyle} options={styles} />}
       </SetupCard>
     )
   }

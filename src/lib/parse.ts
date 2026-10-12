@@ -55,6 +55,66 @@ function parseList(text: string): ParseResult {
   return { items: entries.map((answer) => ({ id: newId(), answer })), errors: [] }
 }
 
+const COUNT = /\b(\d+)\s*(?:men|members|brothers|guys|people|names)\b/i
+const BULLET = /^\s*(?:[-*•·]|\d+[.)])\s+/
+
+function isExplicitHeader(line: string): boolean {
+  return line.startsWith('#') || /:\s*$/.test(line) || COUNT.test(line)
+}
+
+function cleanHeader(line: string): string {
+  return line.replace(/^#+\s*/, '').replace(/:\s*$/, '').trim()
+}
+
+/** "Eta - 12 men" -> "Eta" */
+export function groupName(header: string): string {
+  return header.replace(/\s*[-–—:,(]?\s*\d+\s*(?:men|members|brothers|guys|people|names)\b.*$/i, '').trim() || header
+}
+
+/**
+ * Headers are lines starting with "#", ending with ":", or containing a count like "12 men".
+ * Without any such line, each blank-line-separated block's first line is its header.
+ */
+function parseGroups(text: string): ParseResult {
+  const lines = text.split(/\r?\n/).map((l, i) => ({ line: l.trim(), n: i + 1 }))
+  const explicit = lines.some((l) => l.line && isExplicitHeader(l.line))
+  const groups: { header: string; n: number; members: string[] }[] = []
+  const errors: string[] = []
+  let current: (typeof groups)[number] | null = null
+  let blockStart = true
+
+  for (const { line, n } of lines) {
+    if (!line) {
+      blockStart = true
+      continue
+    }
+    const isHeader = explicit ? isExplicitHeader(line) : blockStart
+    blockStart = false
+    if (isHeader) {
+      current = { header: cleanHeader(line), n, members: [] }
+      groups.push(current)
+    } else if (!current) {
+      errors.push(`Line ${n}: "${line}" comes before any class header.`)
+    } else {
+      current.members.push(line.replace(BULLET, '').trim())
+    }
+  }
+
+  const items: Item[] = []
+  for (const g of groups) {
+    if (!g.members.length) {
+      errors.push(`Line ${g.n}: "${g.header}" has no names under it.`)
+      continue
+    }
+    const expected = COUNT.exec(g.header)
+    if (expected && Number(expected[1]) !== g.members.length) {
+      errors.push(`"${g.header}" lists ${g.members.length} name${g.members.length === 1 ? '' : 's'}.`)
+    }
+    items.push({ id: newId(), prompt: g.header, answer: g.members.join(', '), members: g.members })
+  }
+  return { items, errors }
+}
+
 export function parseDeck(kind: DeckKind, text: string, splitBy: SplitBy = 'line'): ParseResult {
   switch (kind) {
     case 'passage':
@@ -63,6 +123,8 @@ export function parseDeck(kind: DeckKind, text: string, splitBy: SplitBy = 'line
       return parseQa(text)
     case 'list':
       return parseList(text)
+    case 'groups':
+      return parseGroups(text)
   }
 }
 

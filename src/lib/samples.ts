@@ -36,6 +36,25 @@ Saturn
 Uranus
 Neptune`,
   },
+  {
+    name: 'Sample class list',
+    kind: 'groups',
+    source: `Alpha - 4 men
+John Smith
+Mike Lee
+David Kim
+Chris Park
+
+Beta - 3 men
+Sam Jones
+Alex Rivera
+Ben Carter
+
+Gamma - 3 men
+Ryan Cho
+Tyler Brooks
+Nate Patel`,
+  },
 ]
 
 export function buildSampleDecks(): Deck[] {

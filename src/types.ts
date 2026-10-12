@@ -1,4 +1,4 @@
-export type DeckKind = 'passage' | 'qa' | 'list'
+export type DeckKind = 'passage' | 'qa' | 'list' | 'groups'
 export type Mode = 'typing' | 'mcq' | 'speed'
 export type SplitBy = 'line' | 'sentence'
 
@@ -8,6 +8,8 @@ export interface Item {
   answer: string
   /** Extra accepted answers (Q/A decks only). */
   alternates?: string[]
+  /** Unordered members under a group header (class list decks only). */
+  members?: string[]
 }
 
 export interface Deck {
@@ -67,6 +69,7 @@ export const KIND_LABELS: Record<DeckKind, string> = {
   passage: 'Passage',
   qa: 'Q/A',
   list: 'List',
+  groups: 'Class list',
 }
 
 export const MODE_LABELS: Record<Mode, string> = {

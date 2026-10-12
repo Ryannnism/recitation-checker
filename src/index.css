@@ -314,6 +314,18 @@ label.check {
   color: #7cd4ff;
 }
 
+.badge.groups {
+  color: #8ce99a;
+}
+
+.group-grade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin-top: 1rem;
+  font-size: 1.05rem;
+}
+
 .badge.list {
   color: #ffc27c;
 }

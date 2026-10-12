@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { bestAttempt, deleteDeck, exportData, importData, saveDeck, useAttempts, useDecks } from '../store/decks'
 import { buildSampleDecks } from '../lib/samples'
-import { formatScore } from '../lib/format'
+import { deckSize, formatScore } from '../lib/format'
 import { KIND_LABELS, MODES, MODE_LABELS, type Attempt, type Deck } from '../types'
 
 function download(filename: string, text: string) {
@@ -27,7 +27,7 @@ function DeckCard({ deck, attempts }: { deck: Deck; attempts: Attempt[] }) {
     <div className="card deck-card">
       <div className="spread">
         <span className={`badge ${deck.kind}`}>{KIND_LABELS[deck.kind]}</span>
-        <span className="muted small">{deck.items.length} items</span>
+        <span className="muted small">{deckSize(deck)}</span>
       </div>
       <h3 style={{ marginTop: '0.5rem' }}>{deck.name}</h3>
       <div className="bests">
